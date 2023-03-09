@@ -1643,7 +1643,17 @@ func (c *RegionCache) scanRegions(bo *retry.Backoffer, startKey, endKey []byte, 
 			regions = append(regions, region)
 		}
 		if len(regions) == 0 {
-			return nil, errors.New("receive Regions with no peer")
+			for index, r := range regionsInfo {
+				logutil.BgLogger().Error("received Regions with no peer",
+					zap.Int("index", index),
+					zap.String("meta", r.Meta.String()),
+					zap.String("leader", r.Leader.String()),
+					zap.Any("downPeers", r.DownPeers),
+					zap.Any("pendingPeers", r.PendingPeers),
+					zap.String("bucket", r.Buckets.String()),
+				)
+			}
+			return nil, errors.Errorf("receive Regions with no peer")
 		}
 		if len(regions) < len(regionsInfo) {
 			logutil.Logger(context.Background()).Debug(
